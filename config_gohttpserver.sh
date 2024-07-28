@@ -4,6 +4,7 @@ default_port=8000
 default_shared_folder="/home/$USER/"
 while true; do
 result=$(yad --title="gohttpserver Configuration" \
+--window-icon=folder-remote \
 --form \
 --width=520 \
 --height=350 \
