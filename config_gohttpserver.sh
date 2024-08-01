@@ -1,4 +1,5 @@
 #!/bin/bash
+export NO_AT_BRIDGE=1
 default_title="My Files Server"
 default_port=8000
 default_shared_folder="/home/$USER/"
