@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=gohttpserver config
+GenericName=http file server easy config
+Exec=/usr/local/bin/config_gohttpserver.sh
+Terminal=false
+Icon=folder-remote
+Type=Application
+Categories=Network;
+Version=1.0
