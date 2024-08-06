@@ -2,7 +2,7 @@
 export NO_AT_BRIDGE=1
 titl="NTpw-gui"
 backupid=$RANDOM
-
+imgicon="/usr/share/icons/hicolor/128x128/apps/ntpwgui.png"
 PART_LIST=$(lsblk -nro NAME,TYPE,FSTYPE | grep -iw part | awk -F" " '$3 ~ /./ {print $1}')
 
 for NTFS_CHECK in $PART_LIST; do
@@ -10,7 +10,7 @@ FILESYSTEM=$(lsblk -n -r -o FSTYPE /dev/$NTFS_CHECK | tr '[:upper:]' '[:lower:]'
 [ "$FILESYSTEM" = "ntfs" -o "$FILESYSTEM" = "ntfs-3g" ] && NTFS="${NTFS} $NTFS_CHECK"
 done
 
-[ -z "$NTFS" ] && yad --center --error  --title="$titl"  --window-icon="ntpwgui.png" --image="ntpwgui.png" --width=500 --height=200 --text="Could not find any supported NTFS partitions." --title="Error" && exit 1
+[ -z "$NTFS" ] && yad --center --error  --title="$titl"  --window-icon="$imgicon" --image="$imgicon" --width=500 --height=200 --text="Could not find any supported NTFS partitions." --title="Error" && exit 1
 
 TESTMOUNT="/tmp/windows_test"
 WINNT="WINNT/system32/config/SAM"
@@ -45,7 +45,7 @@ umount $TESTMOUNT
 fi
 done
 if [ -z "$WINDOWS" ]; then
-yad --center --error  --title="$titl" --window-icon="ntpwgui.png"  --image="ntpwgui.png" --width=500 --height=200 \
+yad --center --error  --title="$titl" --window-icon="$imgicon"  --image="$imgicon" --width=500 --height=200 \
 --text="<b>Error</b>: No Windows installation found\n\nNTFS partitions were found, but no Windows SAM file was detected.\n\nMake sure you have a valid Windows installation.\n"
 rm -f /tmp/winversions
 exit 1
@@ -61,7 +61,7 @@ SIZE=$(lsblk -n -r -o SIZE /dev/$PARTITION)
 COMBINED_LIST+="/dev/$PARTITION $SIZE, $LABEL $UUID $PRODNAME\n"
 done
 
-SELECTED=$(echo -e "$COMBINED_LIST" | yad --center --list --title="$titl"  --window-icon="ntpwgui.png" --image="ntpwgui.png" \
+SELECTED=$(echo -e "$COMBINED_LIST" | yad --center --list --title="$titl"  --window-icon="$imgicon" --image="$imgicon" \
 --text="Please choose the windows installation\nto modify user accounts:" \
 --column="Windows Installation detected" \
 --width=700 --height=400 \
@@ -74,7 +74,7 @@ PARTITION=$(echo $SELECTED | cut -d'/' -f3 | cut -d' ' -f1)
 echo $PARTITION
 
 if grep -wq $PARTITION /proc/mounts; then
-findmnt -no OPTIONS /dev/$PARTITION | grep -iw "ro" && yad --error --width=500 --height=200 --text="Operation not permitted. Failed to mount /dev/${PARTITION}.\n${MNTERR}" --title="$titl" --image="ntpwgui.png"  --window-icon="ntpwgui.png" && rm -f /tmp/winversions && exit 1
+findmnt -no OPTIONS /dev/$PARTITION | grep -iw "ro" && yad --error --width=500 --height=200 --text="Operation not permitted. Failed to mount /dev/${PARTITION}.\n${MNTERR}" --title="$titl" --image="$imgicon"  --window-icon="$imgicon" && rm -f /tmp/winversions && exit 1
 MOUNT_POINT=$(lsblk -n -r -o MOUNTPOINT /dev/$PARTITION)
 else
 if ntfs-3g.probe --readwrite /dev/$PARTITION; then
@@ -82,11 +82,11 @@ mount /dev/$PARTITION $TESTMOUNT
 MOUNT_POINT=$(lsblk -n -r -o MOUNTPOINT /dev/$PARTITION)
 else
 PROBEOUT="$(ntfs-3g.probe --readwrite /dev/$PARTITION 2>&1)"
-[ "$PROBEOUT" ] && yad --error --window-icon="ntpwgui.png" --image="ntpwgui.png" --width=500 --height=200 --text="Operation not permitted. Failed to mount /dev/${PARTITION}.\n${PROBEOUT}" --title="$titl" --button="Next:0" ||
-yad --window-icon="ntpwgui.png" --image="ntpwgui.png" --width=500 --height=200 --text="${PROBERR}${PARTITION}." --title="$titl" --button="Next:0"
+[ "$PROBEOUT" ] && yad --error --window-icon="$imgicon" --image="$imgicon" --width=500 --height=200 --text="Operation not permitted. Failed to mount /dev/${PARTITION}.\n${PROBEOUT}" --title="$titl" --button="Next:0" ||
+yad --window-icon="$imgicon" --image="$imgicon" --width=500 --height=200 --text="${PROBERR}${PARTITION}." --title="$titl" --button="Next:0"
 echo ${PROBEOUT}
 if echo ${PROBEOUT} | grep -q "hibernat"; then
-yad --width=400 --height=200 --title="$title" --image="ntpwgui.png"  --window-icon="ntpwgui.png" --text="Do you want to try to remove hibernation file ? \nPlease be aware that the hibernated session will be lost.\n" \
+yad --width=400 --height=200 --title="$title" --image="$imgicon"  --window-icon="$imgicon" --text="Do you want to try to remove hibernation file ? \nPlease be aware that the hibernated session will be lost.\n" \
 --button=Continuer:0 --button=Annuler:1
 response=$?
 if [ $response -eq 0 ]; then
@@ -100,7 +100,7 @@ umount /dev/$PARTITION
 }
 PROBEOUT="$(ntfs-3g.probe --readwrite /dev/$PARTITION 2>&1)"
 if [ "$PROBEOUT" ]; then
-yad --error --width=500 --height=200 --border=10 --text "${PROBERR}${PARTITION}.\n${PROBEOUT}\n\n" --image="ntpwgui.png"  --window-icon="ntpwgui.png" --title="$titl"
+yad --error --width=500 --height=200 --border=10 --text "${PROBERR}${PARTITION}.\n${PROBEOUT}\n\n" --image="$imgicon"  --window-icon="$imgicon" --title="$titl"
 rm -f /tmp/winversions && exit 1
 else
 mount /dev/$PARTITION $TESTMOUNT
@@ -117,7 +117,7 @@ sleep 1.25
 MOUNT_POINT=$(lsblk -nr -o MOUNTPOINT /dev/$PARTITION)
 }
 fi
-[ "$MOUNT_POINT" ] || { yad --error --width=500 --height=200 --border=10 --text "${PROBERR}${PARTITION},\nor encountered issue with volume ${PARTITION}." --image="ntpwgui.png"  --window-icon="ntpwgui.png" && rm -f /tmp/winversions && exit 1; }
+[ "$MOUNT_POINT" ] || { yad --error --width=500 --height=200 --border=10 --text "${PROBERR}${PARTITION},\nor encountered issue with volume ${PARTITION}." --image="$imgicon"  --window-icon="$imgicon" && rm -f /tmp/winversions && exit 1; }
 else
 echo "Canceled by user."
 rm -f /tmp/winversions && exit 1
@@ -142,7 +142,7 @@ while true; do
 data=$(sudo chntpw -l "$SAMPATH" | grep -E "^\| [0-9a-f]{4} \|")
 
 if [ -z "$data" ]; then
-yad --center --title=$titl --window-icon="ntpwgui.png" --image="ntpwgui.png" --text="\n  Error : no user found  \n" --button="OK:0"
+yad --center --title=$titl --window-icon="$imgicon" --image="$imgicon" --text="\n  Error : no user found  \n" --button="OK:0"
 rm -f /tmp/winversions
 exit 1
 fi
@@ -171,7 +171,7 @@ for (( i=0; i<$length; i++ )); do
 yad_data+="\"${user_id[$i]}\" \"${user_name[$i]}\" \"${admin_status[$i]}\" \"${lock_status[$i]}\" "
 done
 
-selected=$(eval yad --center --title "$titl" --window-icon="ntpwgui.png" --image="ntpwgui.png" --text "\"\n    Windows users on $PARTITION:\n\"" --list \
+selected=$(eval yad --center --title "$titl" --window-icon="$imgicon" --image="$imgicon" --text "\"\n    Windows users on $PARTITION:\n\"" --list \
 --column="UserID" --column="UserName" --column="AdminStatus" --column="LockStatus" \
 $yad_data \
 --height=500 --width=700 \
@@ -184,7 +184,7 @@ else
 echo "No selection made or operation cancelled."
 sudo umount $MOUNT_POINT
 if [ $? -ne 0 ]; then
-yad --center --error --title=$titl --window-icon="ntpwgui.png" --image="ntpwgui.png" --text="\n     Error unmounting partition.     \n"
+yad --center --error --title=$titl --window-icon="$imgicon" --image="$imgicon" --text="\n     Error unmounting partition.     \n"
 rm -f /tmp/winversions
 exit 1
 fi
@@ -201,7 +201,7 @@ fi
 done
 
 while true; do
-action=$(yad --center --title=$titl --window-icon="ntpwgui.png" --image="ntpwgui.png" --list \
+action=$(yad --center --title=$titl --window-icon="$imgicon" --image="$imgicon" --list \
 --text="\nSelect action for user $selected_username:\n" \
 --radiolist \
 --column="" --column="Action" \
@@ -241,7 +241,7 @@ EOF
 ;;
 esac
 
-yad --center --title=$titl --window-icon="ntpwgui.png" --image="ntpwgui.png" --text="\n   Action '$selected_action' was performed for user $selected_username   \n" --button="OK:0"
+yad --center --title=$titl --window-icon="$imgicon" --image="$imgicon" --text="\n   Action '$selected_action' was performed for user $selected_username   \n" --button="OK:0"
 break
 else
 echo "No action selected or operation cancelled. Returning to user selection."

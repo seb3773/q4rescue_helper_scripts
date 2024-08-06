@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=NTpw-gui
+GenericName=Clear MS windows passwords/manage accounts type
+Exec=tdesudo /usr/local/bin/ntpwgui.sh
+Terminal=false
+Icon=ntpwgui.png
+Type=Application
+Categories=System;Security;
+Version=1.0
