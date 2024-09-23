@@ -1,0 +1,23 @@
+#!/bin/bash
+source /usr/local/bin/q4menus
+title="Main Menu"
+options=("Keyboard layout" "Font size" "Main CLI Tools" "Apps/Helper scripts" "Logout" "Shell")
+descriptions=( "Select your keyboard layout"
+"Adjust font size (small/normal)"
+"Infos & descriptions of the main CLI tools availables"
+"Menu to launch main apps & usefull helper scripts"
+"restart/shutdown"
+"Exit to shell" )
+menu_banner=(
+" ██████╗ ██╗  ██╗██████╗ ███████╗███████╗ ██████╗██╗   ██╗███████╗"
+"██╔═══██╗██║  ██║██╔══██╗██╔════╝██╔════╝██╔════╝██║   ██║██╔════╝"
+"██║   ██║███████║██████╔╝█████╗  ███████╗██║     ██║   ██║█████╗  "
+"██║▄▄ ██║╚════██║██╔══██╗██╔══╝  ╚════██║██║     ██║   ██║██╔══╝  "
+"╚██████╔╝     ██║██║  ██║███████╗███████║╚██████╗╚██████╔╝███████╗"
+" ╚══▀▀═╝      ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝"
+"                                                  ≡ console mode ≡"
+)
+
+q4rmenu options[@] descriptions[@] 1 1 menu_banner[@] "$title"
+echo $q4rmenu_RESULT
+if [[ $q4rmenu_RESULT == "Main CLI Tools" ]];then ./qinfo;fi

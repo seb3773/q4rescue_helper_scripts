@@ -1,0 +1,100 @@
+#!/bin/bash
+cleanup() { tput cnorm;tput sgr0;tput clear; }
+q4rmenu() { local options=("${!1}");local descriptions=("${!2}");local banner=${3:-0};local infobox=${4:-1}
+local mban=("${!5}");local menu_title=${6:-"┤ Main menu ├"};q4rmenu_RESULT=""
+trap 'cleanup;q4rmenu_RESULT=0;break' SIGINT;tput civis;tput clear;rows=$(tput lines);cols=$(tput cols);menu_width=50
+n_options=${#options[@]};menu_height=$((n_options + 13)); if [[ $banner -eq 1 ]]; then menu_start_row=$((${#mban[@]} + 2))
+else menu_start_row=2;fi;menu_start_col=$(( (cols - menu_width) / 2 ));info_width=$((menu_width + 30));info_height=3
+info_start_row=$((menu_start_row + menu_height + 3));info_start_col=$(( (cols - info_width) / 2 ))
+drawbanner() { if [[ $banner -eq 1 ]]; then local banner_height=${#mban[@]}
+local banner_start_row=1;local banner_start_col=$(( (cols - ${#mban[0]}) / 2 ))
+for i in "${!mban[@]}"; do tput cup $((banner_start_row + i)) $banner_start_col;echo "${mban[i]}";done;fi;tput sgr0;}
+drawbox() { local row=$1;local col=$2;local width=$3;local height=$4;local title="$5"
+tput setab 7;tput setaf 0;tput cup $row $col;echo "┌$(printf '─%.0s' $(seq 1 $((width - 2))))┐"
+for ((i = 1; i < height - 1; i++)); do tput cup $((row + i)) $col;echo "│$(printf ' %.0s' $(seq 1 $((width - 2))))│";done
+tput cup $((row + height - 1)) $col;echo "└$(printf '─%.0s' $(seq 1 $((width - 2))))┘"
+local title_col=$((col + (width - ${#title}) / 2));tput cup $row $title_col;echo "$title";tput sgr0;}
+drawmenu() { local ssel=$1;local bsel=$2;local psel=$3;if [[ $psel == -1 ]]; then tput setab 7;tput setaf 0
+drawbox $menu_start_row $menu_start_col $menu_width $menu_height "┤ $menu_title ├"
+local text="Choose an option:";local text_col=$((menu_start_col + 2));tput cup $((menu_start_row + 1)) $text_col
+tput setab 7;tput setaf 0;echo "$text";for i in "${!options[@]}"; do drawoption $i $ssel;done
+else drawoption $psel $ssel;drawoption $ssel $ssel;fi;if [[ $psel != $ssel || $prev_bsel != $bsel ]]; then
+local button_row=$((menu_start_row + menu_height - 3));local ok_col=$((menu_start_col + (menu_width / 4) - 2))
+local cancel_col=$((menu_start_col + 3 * (menu_width / 4) - 10));tput setab 7;tput setaf 0;tput cup $button_row $ok_col
+if [[ $bsel -eq 0 ]]; then tput setab 4;tput setaf 7;fi;echo "  <OK>  ";tput setab 7;tput setaf 0;tput cup $button_row $cancel_col
+if [[ $bsel -eq 1 ]]; then tput setab 4;tput setaf 7;fi;echo "  <Cancel>  ";fi;tput sgr0;}
+drawoption() { local index=$1;local ssel=$2;local options_start_row=$((menu_start_row + 3));local line=$((options_start_row + index))
+local col=$menu_start_col;local option="${options[index]}";local option_width=${#option};local padding=$(( (menu_width - 2 - option_width) / 2 ))
+tput cup $line $col;tput setab 7;tput setaf 0;echo -n "│";if [[ $index -eq $ssel ]]; then tput setab 1;tput setaf 7;else tput setab 7;tput setaf 0;fi
+tput cup $line $((col + 1 + padding));echo -n "$option";tput setab 7;tput setaf 0
+echo "$(printf ' %.0s' $(seq 1 $((menu_width - 2 - padding - option_width))))│";}
+drawinfobox() { local row=$1;local col=$2;local width=$3;local height=$4
+tput setab 4;tput setaf 7;tput cup $row $col;echo "┌$(printf '─%.0s' $(seq 1 $((width - 2))))┐"
+for ((i = 1; i < height - 1; i++)); do tput cup $((row + i)) $col;echo "│$(printf ' %.0s' $(seq 1 $((width - 2))))│";done
+tput cup $((row + height - 1)) $col;echo "└$(printf '─%.0s' $(seq 1 $((width - 2))))┘";tput sgr0;}
+showdescription() { local ssel=$1;if [[ $infobox -eq 1 ]]; then for ((i = $info_start_row; i < $info_start_row + $info_height; i++)); do
+tput cup $i $info_start_col;printf "%-*s" $info_width " ";done;drawinfobox $info_start_row $info_start_col $info_width $info_height
+local desc="${descriptions[ssel]}";local desc_col=$((info_start_col + (info_width - ${#desc}) / 2))
+tput setab 4;tput setaf 7;tput cup $((info_start_row + 1)) $desc_col;echo "$desc";fi;tput sgr0;}
+if [[ $banner -eq 1 ]]; then drawbanner;fi;ssel=0;bsel=0;psel=-1;prev_bsel=-1
+drawmenu $ssel $bsel $psel;showdescription $ssel;while true; do read -rsn1 key;if [[ $key == $'\x1b' ]]; then read -rsn2 -t 0.1 key;fi
+case $key in "[A") if [[ $bsel -eq 1 ]]; then continue;else psel=$ssel;((ssel--));if [[ $ssel -lt 0 ]]; then ssel=$((n_options - 1));fi;
+drawmenu $ssel $bsel $psel;showdescription $ssel;fi;;
+"[B") if [[ $bsel -eq 1 ]]; then continue;else psel=$ssel;((ssel++));if [[ $ssel -ge $n_options ]]; then ssel=0;fi
+drawmenu $ssel $bsel $psel;showdescription $ssel;fi;;
+"[C") prev_bsel=$bsel;if [[ $bsel -eq 0 ]]; then bsel=1;drawmenu $ssel $bsel $psel;fi;;
+"[D") prev_bsel=$bsel;if [[ $bsel -eq 1 ]]; then bsel=0;drawmenu $ssel $bsel $psel;fi;;
+"q") cleanup;q4rmenu_RESULT=0;break;;
+"") if [[ $bsel -eq 0 ]]; then if [[ $ssel -eq $((n_options - 1)) ]]; then cleanup
+q4rmenu_RESULT="${options[ssel]}";break;else cleanup;q4rmenu_RESULT="${options[ssel]}";break;fi
+elif [[ $bsel -eq 1 ]]; then cleanup;q4rmenu_RESULT=0;break;fi;;
+esac;done;}
+q4rinfo() { local options=("${!1}");local descriptions=("${!2}");local infobox=${3:-1};local menu_title=${4:-"┤ Main menu ├"}
+q4rinfo_RESULT="";trap 'cleanup;q4rinfo_RESULT=0;break' SIGINT
+tput civis;tput clear;rows=$(tput lines);cols=$(tput cols);menu_width=$((cols / 3 - 1))
+info_width=$((cols - menu_width - 6));menu_height=$((rows - 2));info_height=$menu_height
+menu_start_row=1;menu_start_col=2;info_start_row=1;info_start_col=$((menu_start_col + menu_width + 2))
+drawbox() { local row=$1;local col=$2;local width=$3;local height=$4;local title="$5"
+tput setab 7;tput setaf 0;tput cup $row $col;echo "┌$(printf '─%.0s' $(seq 1 $((width - 2))))┐"
+for ((i = 1; i < height - 1; i++)); do tput cup $((row + i)) $col;echo "│$(printf ' %.0s' $(seq 1 $((width - 2))))│";done
+tput cup $((row + height - 1)) $col;echo "└$(printf '─%.0s' $(seq 1 $((width - 2))))┘"
+local title_col=$((col + (width - ${#title}) / 2));tput cup $row $title_col;echo "$title";tput sgr0;}
+drawmenu() { local ssel=$1;local bsel=$2;local psel=$3;if [[ $psel == -1 ]]; then tput setab 7;tput setaf 0
+drawbox $menu_start_row $menu_start_col $menu_width $menu_height "┤ $menu_title ├"
+local text="Choose an option:";local text_col=$((menu_start_col + 2));tput cup $((menu_start_row + 1)) $text_col
+tput setab 7;tput setaf 0;echo "$text";for i in "${!options[@]}"; do drawoption $i $ssel;done
+else drawoption $psel $ssel;drawoption $ssel $ssel;fi;if [[ $psel != $ssel || $prev_bsel != $bsel ]]; then
+local button_row=$((menu_start_row + menu_height - 3));local ok_col=$((menu_start_col + (menu_width / 4) - 2))
+local cancel_col=$((menu_start_col + 3 * (menu_width / 4) - 10));tput setab 7;tput setaf 0;tput cup $button_row $ok_col
+if [[ $bsel -eq 0 ]]; then tput setab 4;tput setaf 7;fi;echo "  <OK>  ";tput setab 7;tput setaf 0;tput cup $button_row $cancel_col
+if [[ $bsel -eq 1 ]]; then tput setab 4;tput setaf 7;fi;echo "  <Cancel>  ";fi;tput sgr0;}
+drawoption() { local index=$1;local ssel=$2;local options_start_row=$((menu_start_row + 3))
+local line=$((options_start_row + index));local col=$menu_start_col;local option="${options[index]}"
+local padding=$(( (menu_width - 2 - ${#option}) / 2 ));tput cup $line $col;tput setab 7;tput setaf 0
+echo -n "│$(printf ' %.0s' $(seq 1 $padding))";if [[ $index -eq $ssel ]]; then tput setab 1;tput setaf 7;else tput setab 7;tput setaf 0;fi
+echo -n "$option";tput setab 7;tput setaf 0;echo "$(printf ' %.0s' $(seq 1 $((menu_width - 2 - padding - ${#option}))))│";}
+drawinfobox() { local row=$1;local col=$2;local width=$3;local height=$4;tput setab 4;tput setaf 7
+tput cup $row $col;echo "┌$(printf '─%.0s' $(seq 1 $((width - 2))))┐"
+for ((i = 1; i < height - 1; i++)); do tput cup $((row + i)) $col;echo "│$(printf ' %.0s' $(seq 1 $((width - 2))))│";done
+tput cup $((row + height - 1)) $col;echo "└$(printf '─%.0s' $(seq 1 $((width - 2))))┘";tput sgr0;}
+showdescription() { local ssel=$1;if [[ $infobox -eq 1 ]]; then for ((i = $info_start_row; i < $info_start_row + $info_height; i++)); do
+tput cup $i $info_start_col;printf "%-*s" $info_width " ";done;drawinfobox $info_start_row $info_start_col $info_width $info_height
+local desc="${descriptions[ssel]}";local desc_row=$((info_start_row + 1));local desc_col=$((info_start_col + 1))
+local max_width=$((info_width - 2));local info_line="Information:";tput setab 4;tput setaf 7
+tput cup $info_start_row $info_start_col;echo -n "┌ $info_line";tput cup $info_start_row $((info_start_col + ${#info_line} + 1))
+echo " ";tput sgr0;while IFS= read -r line; do while [[ ${#line} -gt $max_width ]]; do tput cup $desc_row $desc_col
+echo "${line:0:$max_width}";line="${line:$max_width}";((desc_row++));done;tput cup $desc_row $desc_col
+echo "$line";((desc_row++));done <<< "$(echo -e "\e[97m\e[44m$desc\e[39m\e[49m" | sed 's/\\n/\n/g')";fi;tput sgr0;}
+ssel=0;bsel=0;psel=-1;prev_bsel=-1;n_options=${#options[@]};drawmenu $ssel $bsel $psel;showdescription $ssel
+while true; do read -rsn1 key;if [[ $key == $'\x1b' ]]; then read -rsn2 -t 0.1 key;fi
+case $key in "[A") if [[ $bsel -eq 1 ]]; then continue;else stty -echo;psel=$ssel;((ssel--));if [[ $ssel -lt 0 ]]; then ssel=$((n_options - 1));fi
+drawmenu $ssel $bsel $psel;showdescription $ssel;stty echo;fi;;
+"[B") if [[ $bsel -eq 1 ]]; then continue;else stty -echo;psel=$ssel;((ssel++));if [[ $ssel -ge $n_options ]]; then ssel=0;fi
+drawmenu $ssel $bsel $psel;showdescription $ssel;stty echo;fi;;
+"[C") prev_bsel=$bsel;if [[ $bsel -eq 0 ]]; then bsel=1;drawmenu $ssel $bsel $psel;fi;;
+"[D") prev_bsel=$bsel;if [[ $bsel -eq 1 ]]; then bsel=0;drawmenu $ssel $bsel $psel;fi;;
+"q") cleanup;q4rinfo_RESULT=0;break;;
+"") if [[ $bsel -eq 0 ]]; then if [[ $ssel -eq $((n_options - 1)) ]]; then cleanup
+q4rinfo_RESULT="${options[ssel]}";break;else cleanup;q4rinfo_RESULT="${options[ssel]}"
+break;fi;elif [[ $bsel -eq 1 ]]; then cleanup;q4rinfo_RESULT=0;break;fi;;
+esac;done;}
